@@ -1,0 +1,51 @@
+<beast>
+  <data id="alignment" dataType="nucleotide">
+    {{SEQUENCES}}
+  </data>
+
+  <run id="mcmc" spec="MCMC" chainLength="50000000">
+    <state>
+      <tree id="tree" name="stateNode"/>
+      <parameter id="popSizes" name="stateNode" dimension="10">1.0</parameter>
+    </state>
+
+    <init spec="beast.evolution.tree.TreeParser" id="startingTree"
+          tree="@tree" taxa="@alignment" initial="@alignment" parseLeaves="true"/>
+
+    <distribution id="posterior" spec="util.CompoundDistribution">
+      <distribution id="prior" spec="util.CompoundDistribution">
+        <distribution id="coalescent" spec="beast.evolution.coalescent.BayesianSkyline"
+                      tree="@tree" populationSizes="@popSizes">
+          <populationSizes spec="parameter.RealParameter" idref="popSizes"/>
+        </distribution>
+      </distribution>
+
+      <distribution id="likelihood" spec="util.CompoundDistribution">
+        <distribution id="treeLikelihood" spec="beast.evolution.likelihood.TreeLikelihood"
+                      data="@alignment" tree="@tree">
+          <siteModel spec="SiteModel">
+            <substitutionModel spec="HKY">
+              <kappa>
+                <parameter id="kappa" value="2.0" lower="0.0"/>
+              </kappa>
+            </substitutionModel>
+          </siteModel>
+          <branchRateModel spec="beast.evolution.branchratemodel.StrictClockModel">
+            <clock.rate>
+              <parameter id="clockRate" value="7.6E-10" lower="0.0"/>
+            </clock.rate>
+          </branchRateModel>
+        </distribution>
+      </distribution>
+    </distribution>
+
+    <logger fileName="bsp.log" logEvery="5000" model="@posterior">
+      <log idref="posterior"/>
+      <log idref="popSizes"/>
+    </logger>
+
+    <logger fileName="bsp.trees" logEvery="5000" mode="tree">
+      <log idref="tree"/>
+    </logger>
+  </run>
+</beast>
